@@ -11,7 +11,7 @@ add_subdirectory(libcross2d)
 set(OPTION_EMU OFF CACHE STRING "Emulator to build (pfbneo, pnes, psnes)")
 set(OPTION_BUILTIN_LIBCONFIG OFF CACHE BOOL "Build libconfig from sources")
 set(OPTION_BUILTIN_MINIZIP OFF CACHE BOOL "Build minizip from sources")
-set(OPTION_MPV_PLAYER ON CACHE BOOL "Add support for video snaps (mpv)")
+set(OPTION_MPV_PLAYER OFF CACHE BOOL "Add support for video snaps (mpv)")
 set(OPTION_UPDATE_CONFIG OFF CACHE BOOL "Force config file updating")
 ####################
 # BUILD OPTIONS

@@ -223,7 +223,7 @@ set(FLAGS
         -D__PFBA__
         -D__PFBA_VERSION_MAJOR__=${VERSION_MAJOR}
         -D__PFBA_VERSION_MINOR__=${VERSION_MINOR}
-        -DINCLUDE_7Z_SUPPORT -DMINIZIP_LIB
+        -DINCLUDE_7Z_SUPPORT 
         -DBUILD_SDL2 -DBUILD_M68K
         -fomit-frame-pointer -Wno-write-strings
         -Wall -Wno-long-long -Wno-sign-compare -Wno-uninitialized -Wno-unused
