@@ -8,12 +8,12 @@
 #include "skeleton/pemu_config.h"
 #include "osd.h"
 
-class PGENConfig : public pemu::PEMUConfig {
+class PGENConfig final : public PEMUConfig {
 public:
-    PGENConfig(c2d::Io *io, int version);
+    PGENConfig(Renderer *renderer, int version);
 
     std::vector<int> getCoreHiddenOptionToEnable() override {
-        return {PEMUConfig::OptId::UI_FILTER_SYSTEM};
+        return {UI_FILTER_SYSTEM};
     }
 
     std::string getCoreVersion() override {
