@@ -28,6 +28,7 @@ char szAppSamplesPath[MAX_PATH];
 char szAppBlendPath[MAX_PATH];
 char szAppEEPROMPath[MAX_PATH];
 char szAppHDDPath[MAX_PATH];
+TCHAR szAppCheatsPath[MAX_PATH];
 
 void BurnPathsInit(c2d::C2DIo *io) {
     printf("BurnPathsInit: dataPath = %s\n", io->getDataPath().c_str());
@@ -68,4 +69,7 @@ void BurnPathsInit(c2d::C2DIo *io) {
     snprintf(szAppHiscorePath, MAX_PATH - 1, "%s%s/", szAppHomePath, "hiscores");
     // copy hiscore.dat from romfs to datadir
     io->copy(io->getRomFsPath() + "hiscores/", std::string(szAppHiscorePath) + "/");
+
+    snprintf(szAppCheatsPath, MAX_PATH - 1, "%s%s/", szAppHomePath, "cheats");
+    io->create(szAppCheatsPath);
 }

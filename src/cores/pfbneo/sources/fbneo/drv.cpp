@@ -3,6 +3,8 @@
 #include "skeleton/pemu.h"
 #include "burner.h"
 #include "retro_input.h"
+#include "rgui_turbo.h"
+#include "rgui_cheats.h"
 
 using namespace pemu;
 
@@ -127,6 +129,17 @@ int DrvInit(int nDrvNum, bool bRestore) {
     nBurnLayer = 0xff;
     nSpriteEnable = 0xff;
 
+    // load cheats
+    bCheatsAllowed = true;
+    ConfigCheatLoad();
+
+    // load per-game turbo and cheat settings
+    {
+        const char *drvName = BurnDrvGetTextA(DRV_NAME);
+        RguiTurbo::load(drvName);
+        RguiCheats::loadState(drvName);
+    }
+
     return 0;
 }
 
@@ -137,6 +150,13 @@ int DrvInitCallback() {
 
 int DrvExit() {
     if (bDrvOkay) {
+        // save per-game turbo and cheat settings before exit
+        {
+            const char *drvName = BurnDrvGetTextA(DRV_NAME);
+            RguiTurbo::save(drvName);
+            RguiCheats::saveState(drvName);
+        }
+        CheatExit();
         if (nBurnDrvSelect[0] < nBurnDrvCount) {
             char path[1024];
             snprintf(path, 1023, "%s%s.fs", szAppEEPROMPath, BurnDrvGetTextA(DRV_NAME));

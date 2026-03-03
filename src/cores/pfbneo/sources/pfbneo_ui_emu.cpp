@@ -10,6 +10,7 @@
 #include "pfbneo_ui_video.h"
 #include "pfbneo_utility.h"
 #include "retro_input_wrapper.h"
+#include "rgui_main.h"
 
 using namespace c2d;
 using namespace pemu;
@@ -219,7 +220,15 @@ void PFBAUiEmu::stop() {
     UiEmu::stop();
 }
 
+extern RguiMain *g_rgui;
+
 bool PFBAUiEmu::onInput(c2d::Input::Player *players) {
+    // if RGUI is visible, let it handle input
+    if (g_rgui && g_rgui->isVisible()) {
+        pMain->getInput()->setRotation(Input::Rotation::R0, Input::Rotation::R0);
+        return g_rgui->onInput(players);
+    }
+
     if (pMain->getUiMenu()->isVisible() || pMain->getUiStateMenu()->isVisible()) {
         pMain->getInput()->setRotation(Input::Rotation::R0, Input::Rotation::R0);
         return UiEmu::onInput(players);
@@ -243,7 +252,20 @@ bool PFBAUiEmu::onInput(c2d::Input::Player *players) {
         }
     }
 
-    return UiEmu::onInput(players);
+    // intercept menu combo to show RGUI instead of old menu
+    if (((players[0].buttons & Input::Button::Menu1) && (players[0].buttons & Input::Button::Menu2))) {
+        if (g_rgui) {
+            pause();
+            pMain->getInput()->setRotation(Input::Rotation::R0, Input::Rotation::R0);
+            g_rgui->show(true);
+            pMain->getInput()->clear();
+            return true;
+        }
+    }
+
+    // skip base UiEmu::onInput to avoid triggering old menu,
+    // go directly to C2DObject::onInput
+    return C2DObject::onInput(players);
 }
 
 void PFBAUiEmu::onUpdate() {

@@ -4,6 +4,9 @@
 #endif
 #include "retro_input.h"
 #include "burn_gun.h"
+#ifdef __CROSS2D__
+#include "rgui_turbo.h"
+#endif
 
 bool bStreetFighterLayout = false;
 
@@ -2900,7 +2903,56 @@ void InputMake(void)
 			}
 		}
 	}
+
 #ifdef __CROSS2D__
+	// Turbo fire processing
+	{
+		g_turbo_frame_counter++;
+		bool turbo_active = ((g_turbo_frame_counter / g_turbo.speed) % 2) == 0;
+
+		if (!turbo_active) {
+			// Map turbo button indices to retro joypad IDs
+			// 0=A, 1=B, 2=C(LT), 3=D(RT), 4=X, 5=Y, 6=Z(LB), 7=L(RB)
+			static const unsigned turbo_to_retro[TURBO_MAX_BUTTONS] = {
+				RETRO_DEVICE_ID_JOYPAD_B,   // A
+				RETRO_DEVICE_ID_JOYPAD_A,   // B
+				RETRO_DEVICE_ID_JOYPAD_L,   // C (LT)
+				RETRO_DEVICE_ID_JOYPAD_R,   // D (RT)
+				RETRO_DEVICE_ID_JOYPAD_Y,   // X
+				RETRO_DEVICE_ID_JOYPAD_X,   // Y
+				RETRO_DEVICE_ID_JOYPAD_L2,  // Z (LB)
+				RETRO_DEVICE_ID_JOYPAD_R2,  // L (RB)
+			};
+
+			for (UINT32 ki = 0; ki < MAX_KEYBINDS; ki++) {
+				if (sKeyBinds[ki].device == RETRO_DEVICE_NONE) continue;
+				if (sKeyBinds[ki].device != RETRO_DEVICE_JOYPAD) continue;
+
+				unsigned port = sKeyBinds[ki].port;
+				unsigned btn_id = sKeyBinds[ki].id;
+				if (port >= TURBO_MAX_PLAYERS) continue;
+
+				for (int tb = 0; tb < TURBO_MAX_BUTTONS; tb++) {
+					if (g_turbo.enabled[port][tb] && btn_id == turbo_to_retro[tb]) {
+						// ki IS the nCode (keybind index == switch code)
+						for (UINT32 gi = 0; gi < nGameInpCount; gi++) {
+							struct GameInp *pg = &GameInp[gi];
+							if (pg->nInput == GIT_SWITCH &&
+								pg->Input.Switch.nCode == ki &&
+								pg->Input.nVal != 0) {
+								pg->Input.nVal = 0;
+								if (pg->Input.pVal) {
+									*(pg->Input.pVal) = 0;
+								}
+							}
+						}
+						break;
+					}
+				}
+			}
+		}
+	}
+
     return 0;
 #endif
 }

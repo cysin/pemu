@@ -4,10 +4,18 @@
 
 #include "main.h"
 
+#ifdef __PFBA__
+#include "rgui_main.h"
+#endif
+
 using namespace c2d;
 using namespace pemu;
 
 PEMUUiMain *pemu_ui;
+
+#ifdef __PFBA__
+RguiMain *g_rgui = nullptr;
+#endif
 
 int main(int argc, char **argv) {
     // command line game info
@@ -17,7 +25,7 @@ int main(int argc, char **argv) {
     const auto io = new PEMUIo();
 
     // create main ui/renderer
-    pemu_ui = new PEMUUiMain(Vector2f{1280, 720});
+    pemu_ui = new PEMUUiMain(Vector2f{0, 0});
     pemu_ui->setIo(io);
 
     // load configuration
@@ -44,7 +52,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    // ui
+    // ui - still need the old components for UiMain::init to work
     const auto romList = new PEMURomList(pemu_ui, cfg->getCoreVersion(), cfg->getCoreSupportedExt());
     if (game.path.empty()) {
         romList->build();
@@ -58,6 +66,19 @@ int main(int argc, char **argv) {
     const auto uiState = new PEMUUiMenuState(pemu_ui);
     pemu_ui->init(uiRomList, uiMenu, uiEmu, uiState);
 
+#ifdef __PFBA__
+    // create RGUI menu overlay and add to renderer
+    g_rgui = new RguiMain(pemu_ui);
+    g_rgui->setLayer(100);
+    pemu_ui->add(g_rgui);
+
+    // hide old rom list UI
+    uiRomList->setVisibility(Visibility::Hidden);
+    if (uiRomList->getBlur()) {
+        uiRomList->getBlur()->setVisibility(Visibility::Hidden);
+    }
+#endif
+
     // load specified game from command line if requested
     if (!game.path.empty()) {
         uiRomList->setVisibility(Visibility::Hidden);
@@ -66,10 +87,21 @@ int main(int argc, char **argv) {
         uiEmu->setExitOnStop(true);
         uiEmu->load(game);
     }
+#ifdef __PFBA__
+    else {
+        // show RGUI main menu on startup
+        g_rgui->show(false);
+    }
+#endif
 
     while (!pemu_ui->done) {
         pemu_ui->flip();
     }
+
+#ifdef __PFBA__
+    delete g_rgui;
+    g_rgui = nullptr;
+#endif
 
     delete (skin);
     delete (cfg);
