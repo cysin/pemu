@@ -153,6 +153,7 @@ int PFBAUiEmu::load(const ss_api::Game &game) {
     }
     delete (aud);
     free(pBurnSoundOut);
+    pBurnSoundOut = nullptr;
     nFramesEmulated = 0;
     nFramesRendered = 0;
     nCurrentFrame = 0;
@@ -213,9 +214,11 @@ void Reinitialise(void) {
 }
 
 void PFBAUiEmu::stop() {
+    printf("PFBAUiEmu::stop()\n");
     DrvExit();
     if (pBurnSoundOut) {
         free(pBurnSoundOut);
+        pBurnSoundOut = nullptr;
     }
     UiEmu::stop();
 }
@@ -269,7 +272,7 @@ bool PFBAUiEmu::onInput(c2d::Input::Player *players) {
 }
 
 void PFBAUiEmu::onUpdate() {
-    if (isPaused()) {
+    if (isPaused() || !video || !bDrvOkay) {
         return;
     }
 

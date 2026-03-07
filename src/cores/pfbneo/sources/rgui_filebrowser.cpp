@@ -94,8 +94,14 @@ int RguiFileBrowser::handleInput(Input *input) {
                         path.pop_back();
                     }
                     auto pos = path.rfind('/');
-                    if (pos != std::string::npos && pos > 0) {
-                        m_current_path = path.substr(0, pos + 1);
+                    if (pos != std::string::npos) {
+                        // check if this is a Vita mount root (e.g. "ux0:/")
+                        auto colon = path.rfind(':');
+                        if (colon != std::string::npos && pos == colon + 1) {
+                            // already at mount root, stay here
+                        } else if (pos > 0) {
+                            m_current_path = path.substr(0, pos + 1);
+                        }
                     }
                 } else {
                     m_current_path = entry.path + "/";
@@ -120,6 +126,10 @@ void RguiFileBrowser::draw(Transform &t) {
 
 std::string RguiFileBrowser::getSelectedPath() const {
     return m_selected_file;
+}
+
+std::string RguiFileBrowser::getCurrentPath() const {
+    return m_current_path;
 }
 
 void RguiFileBrowser::setPath(const std::string &path) {

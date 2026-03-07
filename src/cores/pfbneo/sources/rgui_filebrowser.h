@@ -23,6 +23,7 @@ public:
     void draw(c2d::Transform &t);
 
     std::string getSelectedPath() const;
+    std::string getCurrentPath() const;
 
     void setPath(const std::string &path);
 

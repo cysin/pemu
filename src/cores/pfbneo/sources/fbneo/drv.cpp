@@ -150,22 +150,27 @@ int DrvInitCallback() {
 
 int DrvExit() {
     if (bDrvOkay) {
+        printf("DrvExit: begin\n");
         // save per-game turbo and cheat settings before exit
         {
             const char *drvName = BurnDrvGetTextA(DRV_NAME);
+            printf("DrvExit: save turbo/cheats for %s\n", drvName ? drvName : "(null)");
             RguiTurbo::save(drvName);
             RguiCheats::saveState(drvName);
         }
-        CheatExit();
         if (nBurnDrvSelect[0] < nBurnDrvCount) {
             char path[1024];
             snprintf(path, 1023, "%s%s.fs", szAppEEPROMPath, BurnDrvGetTextA(DRV_NAME));
+            printf("DrvExit: BurnStateSave(%s)\n", path);
             BurnStateSave(path, 0);
+            printf("DrvExit: InputExit()\n");
             InputExit();
+            printf("DrvExit: BurnDrvExit()\n");
             BurnDrvExit();
         }
     }
 
+    printf("DrvExit: cleanup globals\n");
     BurnExtLoadRom = nullptr;
     bDrvOkay = 0;
     nBurnDrvSelect[0] = ~0U;

@@ -70,6 +70,7 @@ private:
     RguiStateMenu *m_state_menu = nullptr;
     RguiCheats *m_cheats_menu = nullptr;
     RguiTurbo *m_turbo_menu = nullptr;
+    std::string m_last_browse_path;
 };
 
 #endif // PFBNEO_RGUI_MAIN_H

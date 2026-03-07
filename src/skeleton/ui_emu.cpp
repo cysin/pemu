@@ -102,6 +102,8 @@ void UiEmu::resume() {
 
 void UiEmu::stop() {
     printf("UiEmu::stop()\n");
+    paused = true;
+
     if (audio) {
         printf("Closing audio...\n");
         audio->pause(1);

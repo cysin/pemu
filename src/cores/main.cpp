@@ -8,6 +8,10 @@
 #include "rgui_main.h"
 #endif
 
+#ifdef __VITA__
+#include <psp2/kernel/processmgr.h>
+#endif
+
 using namespace c2d;
 using namespace pemu;
 
@@ -99,13 +103,16 @@ int main(int argc, char **argv) {
     }
 
 #ifdef __PFBA__
+    // remove from parent's child list first to prevent double-free
+    // (pemu_ui's destructor auto-deletes children)
+    pemu_ui->remove(g_rgui);
     delete g_rgui;
     g_rgui = nullptr;
 #endif
 
+    delete (pemu_ui);
     delete (skin);
     delete (cfg);
-    delete (pemu_ui);
 
 #ifdef  __PS4__
     sceSystemServiceLoadExec((char *) "exit", nullptr);

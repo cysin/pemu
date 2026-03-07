@@ -48,9 +48,7 @@ void RguiMain::buildMainMenu() {
         items.push_back({"Resume Game", "", ID_RESUME, false});
     }
 
-    if (!m_in_game) {
-        items.push_back({"Load ROM", "", ID_LOAD_ROM, true});
-    }
+    items.push_back({"Load ROM", "", ID_LOAD_ROM, true});
 
     if (m_in_game) {
         items.push_back({"Save State", "", ID_SAVE_STATE, true});
@@ -180,7 +178,11 @@ void RguiMain::handleMainAction(RguiMenu::Action action) {
                 break;
             case ID_LOAD_ROM:
                 m_screen = SCREEN_FILEBROWSER;
-                m_filebrowser->setPath(std::string(szAppRomPath));
+                // remember last browsed path (RetroArch-style)
+                if (m_last_browse_path.empty()) {
+                    m_last_browse_path = "ux0:/";
+                }
+                m_filebrowser->setPath(m_last_browse_path);
                 break;
             case ID_SAVE_STATE:
                 m_screen = SCREEN_SAVESTATE;
@@ -205,9 +207,14 @@ void RguiMain::handleMainAction(RguiMenu::Action action) {
             case ID_QUIT:
                 if (m_in_game) {
                     m_ui->getUiEmu()->stop();
+                    m_in_game = false;
+                    m_screen = SCREEN_MAIN;
+                    buildMainMenu();
+                    m_ui->getInput()->clear();
+                } else {
+                    hide();
+                    m_ui->done = true;
                 }
-                hide();
-                m_ui->done = true;
                 break;
         }
     } else if (action == RguiMenu::CANCEL) {
@@ -258,7 +265,9 @@ bool RguiMain::onInput(Input::Player *players) {
         case SCREEN_FILEBROWSER: {
             int result = m_filebrowser->handleInput(input);
             if (result == 0) {
-                // file selected - load ROM
+                // file selected - remember directory for next time
+                m_last_browse_path = m_filebrowser->getCurrentPath();
+                // load ROM
                 std::string path = m_filebrowser->getSelectedPath();
                 if (!path.empty()) {
                     ss_api::Game game;
@@ -268,6 +277,7 @@ bool RguiMain::onInput(Input::Player *players) {
 
                     // stop current game if running
                     if (m_in_game) {
+                        m_ui->getConfig()->saveGame();
                         m_ui->getUiEmu()->stop();
                     }
 
@@ -276,6 +286,8 @@ bool RguiMain::onInput(Input::Player *players) {
                     m_ui->getUiEmu()->load(game);
                 }
             } else if (result == 1) {
+                // remember directory even on cancel
+                m_last_browse_path = m_filebrowser->getCurrentPath();
                 m_screen = SCREEN_MAIN;
                 buildMainMenu();
             }
