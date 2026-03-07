@@ -19,6 +19,7 @@ extern char szAppConfigPath[];
 
 namespace {
     const char *RGUI_LAST_ROM_PATH_FILE = "last_rom_path.cfg";
+    const char *RGUI_FONT_FILE = "rgui.ttf";
 
     std::string getDefaultBrowsePath(c2d::Io *io) {
         const std::string vitaRoot = "ux0:/";
@@ -79,6 +80,29 @@ namespace {
         fprintf(f, "%s\n", browsePath.c_str());
         fclose(f);
     }
+
+    c2d::Font *loadRguiFont(pemu::UiMain *ui) {
+        auto skin = ui->getSkin();
+        auto skinFont = skin->getFont();
+        for (const auto &skinPath: skin->getPaths()) {
+            std::string fontPath = skinPath + RGUI_FONT_FILE;
+            if (!ui->getIo()->exist(fontPath)) {
+                continue;
+            }
+
+            auto *font = new C2DFont();
+            if (!font->loadFromFile(fontPath)) {
+                delete font;
+                continue;
+            }
+
+            font->setFilter(skinFont->getFilter());
+            font->setOffset(skinFont->getOffset());
+            return font;
+        }
+
+        return nullptr;
+    }
 }
 
 RguiMain::RguiMain(UiMain *ui)
@@ -86,9 +110,10 @@ RguiMain::RguiMain(UiMain *ui)
     RectangleShape::setFillColor(Color::Transparent);
 
     m_last_browse_path = loadBrowsePath(m_renderer->getIo());
+    m_rgui_font = loadRguiFont(m_ui);
 
     // create sub-menus
-    Font *font = m_ui->getSkin()->getFont();
+    Font *font = m_rgui_font ? m_rgui_font : m_ui->getSkin()->getFont();
     m_main_menu = new RguiMenu(m_renderer, font, "pFBNeo", {});
     m_settings_menu = new RguiMenu(m_renderer, font, "Settings", {});
     m_filebrowser = new RguiFileBrowser(m_renderer, font, m_last_browse_path,
@@ -107,6 +132,7 @@ RguiMain::~RguiMain() {
     delete m_state_menu;
     delete m_cheats_menu;
     delete m_turbo_menu;
+    delete m_rgui_font;
 }
 
 void RguiMain::buildMainMenu() {

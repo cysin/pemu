@@ -47,10 +47,10 @@ private:
     int m_scroll_offset = 0;
     bool m_dirty = true;
 
-    static constexpr int TITLE_HEIGHT = 30;
-    static constexpr int ROW_HEIGHT = 24;
-    static constexpr int FONT_SIZE = 16;
-    static constexpr int MARGIN = 8;
+    static constexpr int TITLE_HEIGHT = 38;
+    static constexpr int ROW_HEIGHT = 30;
+    static constexpr int FONT_SIZE = 22;
+    static constexpr int MARGIN = 10;
     static constexpr int MAX_VISIBLE = 24;
 
     // persistent child objects for rendering
