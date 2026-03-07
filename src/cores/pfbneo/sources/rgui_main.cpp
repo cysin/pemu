@@ -9,21 +9,89 @@
 #include "burner.h"
 #include "rgui_turbo.h"
 #include "rgui_cheats.h"
+#include <cstdio>
 
 using namespace c2d;
 using namespace pemu;
 
 extern char szAppRomPath[];
+extern char szAppConfigPath[];
+
+namespace {
+    const char *RGUI_LAST_ROM_PATH_FILE = "last_rom_path.cfg";
+
+    std::string getDefaultBrowsePath(c2d::Io *io) {
+        const std::string vitaRoot = "ux0:/";
+        if (io && io->getType(vitaRoot) == c2d::Io::Type::Directory) {
+            return vitaRoot;
+        }
+        return szAppRomPath;
+    }
+
+    std::string normalizeBrowsePath(c2d::Io *io, const std::string &path) {
+        std::string normalized = Utility::trim(path);
+        if (normalized.empty()) {
+            return {};
+        }
+        if (normalized.back() != '/') {
+            normalized += "/";
+        }
+        if (io && io->getType(normalized) != c2d::Io::Type::Directory) {
+            return {};
+        }
+        return normalized;
+    }
+
+    std::string loadBrowsePath(c2d::Io *io) {
+        char path[1024];
+        snprintf(path, sizeof(path), "%s%s", szAppConfigPath, RGUI_LAST_ROM_PATH_FILE);
+
+        FILE *f = fopen(path, "r");
+        if (!f) {
+            return getDefaultBrowsePath(io);
+        }
+
+        char line[1024];
+        std::string browsePath;
+        if (fgets(line, sizeof(line), f)) {
+            browsePath = normalizeBrowsePath(io, line);
+        }
+        fclose(f);
+
+        if (browsePath.empty()) {
+            return getDefaultBrowsePath(io);
+        }
+        return browsePath;
+    }
+
+    void saveBrowsePath(const std::string &browsePath) {
+        if (browsePath.empty()) {
+            return;
+        }
+
+        char path[1024];
+        snprintf(path, sizeof(path), "%s%s", szAppConfigPath, RGUI_LAST_ROM_PATH_FILE);
+
+        FILE *f = fopen(path, "w");
+        if (!f) {
+            return;
+        }
+        fprintf(f, "%s\n", browsePath.c_str());
+        fclose(f);
+    }
+}
 
 RguiMain::RguiMain(UiMain *ui)
     : RectangleShape(ui->getSize()), m_ui(ui), m_renderer(ui) {
     RectangleShape::setFillColor(Color::Transparent);
 
+    m_last_browse_path = loadBrowsePath(m_renderer->getIo());
+
     // create sub-menus
     Font *font = m_ui->getSkin()->getFont();
     m_main_menu = new RguiMenu(m_renderer, font, "pFBNeo", {});
     m_settings_menu = new RguiMenu(m_renderer, font, "Settings", {});
-    m_filebrowser = new RguiFileBrowser(m_renderer, font, szAppRomPath,
+    m_filebrowser = new RguiFileBrowser(m_renderer, font, m_last_browse_path,
                                          m_ui->getConfig()->getCoreSupportedExt());
     m_state_menu = new RguiStateMenu(m_renderer, font, m_ui);
     m_cheats_menu = new RguiCheats(m_renderer, font);
@@ -178,10 +246,6 @@ void RguiMain::handleMainAction(RguiMenu::Action action) {
                 break;
             case ID_LOAD_ROM:
                 m_screen = SCREEN_FILEBROWSER;
-                // remember last browsed path (RetroArch-style)
-                if (m_last_browse_path.empty()) {
-                    m_last_browse_path = "ux0:/";
-                }
                 m_filebrowser->setPath(m_last_browse_path);
                 break;
             case ID_SAVE_STATE:
@@ -267,6 +331,7 @@ bool RguiMain::onInput(Input::Player *players) {
             if (result == 0) {
                 // file selected - remember directory for next time
                 m_last_browse_path = m_filebrowser->getCurrentPath();
+                saveBrowsePath(m_last_browse_path);
                 // load ROM
                 std::string path = m_filebrowser->getSelectedPath();
                 if (!path.empty()) {
@@ -288,6 +353,7 @@ bool RguiMain::onInput(Input::Player *players) {
             } else if (result == 1) {
                 // remember directory even on cancel
                 m_last_browse_path = m_filebrowser->getCurrentPath();
+                saveBrowsePath(m_last_browse_path);
                 m_screen = SCREEN_MAIN;
                 buildMainMenu();
             }
